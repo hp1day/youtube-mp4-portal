@@ -290,6 +290,76 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- TAB 2: YouTube URL Downloader Logic ---
   let fetchedYtUrl = '';
 
+  async function fetchYouTubeMetadata(rawUrl) {
+    let url = rawUrl.trim();
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+
+    // Tier 1: Try local/configured backend server
+    try {
+      const res = await fetch(apiUrl(`/api/yt-info?url=${encodeURIComponent(url)}`));
+      if (res.ok) {
+        const data = await res.json();
+        if (data && !data.error && data.title) return data;
+      }
+    } catch (err) {
+      console.warn('Backend server unreachable, using official YouTube oEmbed API...', err);
+    }
+
+    // Tier 2: Official YouTube oEmbed API (CORS enabled, HTTPS, 100% reliable)
+    try {
+      const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+      const res = await fetch(oembedUrl);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.title) {
+          return {
+            title: data.title,
+            uploader: data.author_name || 'YouTube Channel',
+            thumbnail: data.thumbnail_url || `https://i.ytimg.com/vi/${(url.match(/(?:v=|\/|be\/)([\w-]{11})/) || [])[1] || ''}/hqdefault.jpg`,
+            duration: 0
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('YouTube oEmbed failed, trying noembed fallback...', err);
+    }
+
+    // Tier 3: Noembed API fallback
+    try {
+      const noembedUrl = `https://noembed.com/embed?url=${encodeURIComponent(url)}`;
+      const res = await fetch(noembedUrl);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.title) {
+          return {
+            title: data.title,
+            uploader: data.author_name || 'YouTube Channel',
+            thumbnail: data.thumbnail_url,
+            duration: 0
+          };
+        }
+      }
+    } catch (err) {
+      console.warn('Noembed fallback failed:', err);
+    }
+
+    // Tier 4: Direct ID extraction fallback
+    const idMatch = url.match(/(?:v=|\/|be\/)([\w-]{11})/);
+    if (idMatch && idMatch[1]) {
+      const videoId = idMatch[1];
+      return {
+        title: `YouTube Video (${videoId})`,
+        uploader: 'YouTube Creator',
+        thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+        duration: 0
+      };
+    }
+
+    return null;
+  }
+
   ytFetchBtn.addEventListener('click', async () => {
     const url = ytUrlInput.value.trim();
     if (!url) {
@@ -301,39 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ytFetchBtn.disabled = true;
     ytFetchBtn.textContent = 'Fetching...';
 
-    let data = null;
-
-    // First try backend API
-    try {
-      const res = await fetch(apiUrl(`/api/yt-info?url=${encodeURIComponent(url)}`));
-      if (res.ok) {
-        data = await res.json();
-      }
-    } catch (err) {
-      console.warn('Backend yt-info unavailable, using HTTPS metadata fallback...', err);
-    }
-
-    // Fallback for GitHub Pages static environment (HTTPS CORS)
-    if (!data || data.error) {
-      try {
-        const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
-        if (videoIdMatch && videoIdMatch[1]) {
-          const videoId = videoIdMatch[1];
-          const noembedRes = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
-          if (noembedRes.ok) {
-            const noembedData = await noembedRes.json();
-            data = {
-              title: noembedData.title || 'YouTube Video',
-              uploader: noembedData.author_name || 'YouTube Creator',
-              thumbnail: noembedData.thumbnail_url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-              duration: 0
-            };
-          }
-        }
-      } catch (fallbackErr) {
-        console.error('Fallback failed:', fallbackErr);
-      }
-    }
+    const data = await fetchYouTubeMetadata(url);
 
     ytFetchBtn.disabled = false;
     ytFetchBtn.textContent = 'Fetch Link';
