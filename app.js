@@ -418,15 +418,32 @@ document.addEventListener('DOMContentLoaded', () => {
         resetProgressCard();
       }
     } catch (err) {
-      console.warn('Backend server unreachable, redirecting to direct downloader...', err);
+      console.warn('Backend server unreachable on hosted site, showing US-compatible download modal...', err);
       resetProgressCard();
+
+      // Open Modal with US-Supported Downloader Links
+      const dlModal = document.getElementById('dlModal');
+      const cobaltLink = document.getElementById('cobaltLink');
+      const y2mateLink = document.getElementById('y2mateLink');
+      const invidiousLink = document.getElementById('invidiousLink');
+      const closeModalBtn = document.getElementById('closeModalBtn');
 
       const videoIdMatch = fetchedYtUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
       const videoId = videoIdMatch ? videoIdMatch[1] : '';
-      const downloadUrl = `https://ssyoutube.com/watch?v=${videoId || encodeURIComponent(fetchedYtUrl)}`;
 
-      showToast('Opening high-speed MP4 download service...', 'info');
-      window.open(downloadUrl, '_blank');
+      cobaltLink.href = 'https://cobalt.tools/';
+      y2mateLink.href = `https://y2mate.is/en/youtube-to-mp4.html?url=${encodeURIComponent(fetchedYtUrl)}`;
+      invidiousLink.href = videoId ? `https://inv.tux.pizza/watch?v=${videoId}` : fetchedYtUrl;
+
+      dlModal.style.display = 'flex';
+
+      closeModalBtn.onclick = () => {
+        dlModal.style.display = 'none';
+      };
+
+      dlModal.onclick = (e) => {
+        if (e.target === dlModal) dlModal.style.display = 'none';
+      };
     }
   });
 
