@@ -296,34 +296,40 @@ document.addEventListener('DOMContentLoaded', () => {
       url = 'https://' + url;
     }
 
-    // Tier 1: Try local/configured backend server
-    try {
-      const res = await fetch(apiUrl(`/api/yt-info?url=${encodeURIComponent(url)}`));
-      if (res.ok) {
-        const data = await res.json();
-        if (data && !data.error && data.title) return data;
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    // On Localhost: Try backend server yt-dlp first
+    if (isLocal) {
+      try {
+        const res = await fetch(apiUrl(`/api/yt-info?url=${encodeURIComponent(url)}`));
+        if (res.ok) {
+          const data = await res.json();
+          if (data && !data.error && data.title) return data;
+        }
+      } catch (err) {
+        console.warn('Backend server unreachable, falling back to YouTube oEmbed...', err);
       }
-    } catch (err) {
-      console.warn('Backend server unreachable, using official YouTube oEmbed API...', err);
     }
 
-    // Tier 2: Official YouTube oEmbed API (CORS enabled, HTTPS, 100% reliable)
+    // On GitHub Pages or Hosted Client: Direct Official YouTube oEmbed API (Instant <100ms response, CORS-enabled)
     try {
       const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
       const res = await fetch(oembedUrl);
       if (res.ok) {
         const data = await res.json();
         if (data.title) {
+          const videoIdMatch = url.match(/(?:v=|\/|be\/)([\w-]{11})/);
+          const videoId = videoIdMatch ? videoIdMatch[1] : '';
           return {
             title: data.title,
             uploader: data.author_name || 'YouTube Channel',
-            thumbnail: data.thumbnail_url || `https://i.ytimg.com/vi/${(url.match(/(?:v=|\/|be\/)([\w-]{11})/) || [])[1] || ''}/hqdefault.jpg`,
+            thumbnail: data.thumbnail_url || (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : ''),
             duration: 0
           };
         }
       }
     } catch (err) {
-      console.warn('YouTube oEmbed failed, trying noembed fallback...', err);
+      console.warn('YouTube oEmbed failed, trying fallback...', err);
     }
 
     // Tier 3: Noembed API fallback
