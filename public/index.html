@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube MP4 Conversion Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-container">
+      <a href="#" class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+        </div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="brand-title">YouTube MP4 Portal</span>
+            <span class="brand-badge">FFmpeg 8.1 Engine</span>
+          </div>
+        </div>
+      </a>
+
+      <!-- Navigation Tabs -->
+      <nav class="nav-tabs">
+        <button class="tab-btn active" data-tab="tab-converter">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+          Convert Local / Downloaded
+        </button>
+        <button class="tab-btn" data-tab="tab-yt-link">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+          YouTube URL Link
+        </button>
+        <button class="tab-btn" data-tab="tab-history">
+          <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          Library & Downloads
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- TAB 1: Local / Downloaded YouTube File Converter -->
+    <section id="tab-converter" class="tab-panel active">
+      
+      <!-- Drag and Drop Card -->
+      <div class="glass-card">
+        <div class="card-title">
+          <span>📁</span> Upload Downloaded YouTube Media
+        </div>
+        <div class="card-subtitle">
+          Drag & drop your downloaded YouTube files (.webm, .mkv, .flv, .avi, video+audio pairs) or click to browse.
+        </div>
+
+        <div id="dropzone" class="dropzone">
+          <input type="file" id="fileInput" accept="video/*,audio/*,.webm,.mkv,.flv,.avi,.3gp,.mov,.mp4" multiple style="display: none;">
+          <div class="dropzone-icon">
+            <svg fill="none" viewBox="0 0 24 24"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/></svg>
+          </div>
+          <h3>Drop your YouTube video file here</h3>
+          <p>Or click anywhere to select from your computer</p>
+          <div class="format-tags">
+            <span class="tag">.WEBM</span>
+            <span class="tag">.MKV</span>
+            <span class="tag">.FLV</span>
+            <span class="tag">.AVI</span>
+            <span class="tag">.3GP</span>
+            <span class="tag">.MOV</span>
+            <span class="tag">Separate Video + Audio</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Config & Inspector Card (hidden until file uploaded) -->
+      <div id="config-card" class="glass-card" style="display: none;">
+        <div class="card-title">
+          <span>⚙️</span> MP4 Conversion Settings & Media Inspector
+        </div>
+
+        <div class="config-grid">
+          <!-- Video Preview & Metadata -->
+          <div id="preview-panel" class="media-preview-container">
+            <video id="previewVideo" controls crossorigin="anonymous"></video>
+            <div class="meta-details">
+              <div class="meta-item">
+                <span class="meta-label">Resolution</span>
+                <span id="metaRes" class="meta-value">--</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Codec</span>
+                <span id="metaCodec" class="meta-value">--</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Duration</span>
+                <span id="metaDuration" class="meta-value">--</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">File Size</span>
+                <span id="metaSize" class="meta-value">--</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Options Controls -->
+          <div class="options-panel">
+            <div class="form-group">
+              <label class="form-label" for="conversionMode">Conversion Mode</label>
+              <select id="conversionMode" class="form-select">
+                <option value="h264" selected>🎬 Universal MP4 (H.264 / AAC - High Compatibility)</option>
+                <option value="remux">⚡ Ultra-Fast Remux (Container switch - No re-encoding)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="resSelect">Target Resolution</label>
+              <select id="resSelect" class="form-select">
+                <option value="original" selected>Keep Original Resolution</option>
+                <option value="1080p">1080p Full HD (1920x1080)</option>
+                <option value="720p">720p HD (1280x720)</option>
+                <option value="480p">480p SD (854x480)</option>
+                <option value="360p">360p Compact (640x360)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="audioBitrateSelect">Audio Quality</label>
+              <select id="audioBitrateSelect" class="form-select">
+                <option value="320k">320 kbps (High Fidelity)</option>
+                <option value="256k">256 kbps (Very High)</option>
+                <option value="192k" selected>192 kbps (Standard YouTube)</option>
+                <option value="128k">128 kbps (Compact)</option>
+                <option value="mute">Mute Audio</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Video Trimmer / Clipping (Optional)</label>
+              <div class="time-range">
+                <input type="text" id="trimStart" class="form-input" placeholder="Start (e.g. 00:00:00)">
+                <span style="color: var(--text-muted);">to</span>
+                <input type="text" id="trimEnd" class="form-input" placeholder="End (e.g. 00:02:30)">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="outputFilename">Output File Name</label>
+              <input type="text" id="outputFilename" class="form-input" placeholder="my_converted_video">
+            </div>
+
+            <button id="startConvertBtn" class="btn-primary">
+              <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              Start MP4 Conversion
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- TAB 2: YouTube URL Direct Downloader -->
+    <section id="tab-yt-link" class="tab-panel">
+      <div class="glass-card">
+        <div class="card-title">
+          <span>🔗</span> Direct YouTube Link Downloader & MP4 Converter
+        </div>
+        <div class="card-subtitle">
+          Paste any YouTube URL or Shorts link below to fetch metadata and convert directly to MP4 format.
+        </div>
+
+        <div style="display: flex; gap: 0.8rem; margin-bottom: 1.5rem;">
+          <input type="text" id="ytUrlInput" class="form-input" placeholder="https://www.youtube.com/watch?v=..." style="flex: 1;">
+          <button id="ytFetchBtn" class="btn-primary" style="width: auto; padding: 0 24px;">
+            Fetch Link
+          </button>
+        </div>
+
+        <!-- YT Info Card -->
+        <div id="ytInfoCard" style="display: none; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--bg-card-border); border-radius: var(--radius-md); padding: 1.2rem;">
+          <div style="display: flex; gap: 1.2rem; align-items: flex-start; flex-wrap: wrap;">
+            <img id="ytThumb" src="" alt="Thumbnail" style="width: 200px; border-radius: var(--radius-sm); border: 1px solid var(--bg-card-border);">
+            <div style="flex: 1;">
+              <h3 id="ytTitle" style="font-size: 1.1rem; margin-bottom: 0.4rem;">--</h3>
+              <p id="ytUploader" style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.8rem;">--</p>
+              
+              <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <div>
+                  <label class="form-label">Format Resolution</label>
+                  <select id="ytResSelect" class="form-select" style="width: 200px;">
+                    <option value="1080">1080p Full HD MP4</option>
+                    <option value="720">720p HD MP4</option>
+                    <option value="480">480p SD MP4</option>
+                    <option value="best">Best Quality Available</option>
+                  </select>
+                </div>
+                <button id="ytStartDownloadBtn" class="btn-primary" style="width: auto; margin-top: 1.4rem; padding: 10px 24px;">
+                  Download & Convert MP4
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Real-time Progress Monitor Card -->
+    <div id="progressCard" class="glass-card progress-card">
+      <div class="progress-header">
+        <span id="progressTitle" style="font-weight: 700;">Converting video to MP4...</span>
+        <span id="progressPercentBadge" style="background: var(--primary-gradient); padding: 2px 12px; border-radius: var(--radius-full); font-weight: 800; font-size: 0.9rem;">0%</span>
+      </div>
+
+      <div class="progress-bar-bg">
+        <div id="progressBarFill" class="progress-bar-fill"></div>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="meta-item">
+          <span class="meta-label">Conversion Speed</span>
+          <span id="metricSpeed" class="meta-value">0x</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">FPS</span>
+          <span id="metricFps" class="meta-value">0</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Bitrate</span>
+          <span id="metricBitrate" class="meta-value">--</span>
+        </div>
+        <div class="meta-item">
+          <span class="meta-label">Frames</span>
+          <span id="metricFrames" class="meta-value">0</span>
+        </div>
+      </div>
+
+      <details style="margin-top: 1rem; cursor: pointer;">
+        <summary style="color: var(--text-muted); font-size: 0.85rem; font-weight: 600;">View Live FFmpeg Console Output</summary>
+        <div id="terminalBox" class="terminal-box">Starting process...</div>
+      </details>
+    </div>
+
+    <!-- Complete Card -->
+    <div id="completeBox" class="complete-box glass-card">
+      <div class="complete-icon">
+        <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+      </div>
+      <h2 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.4rem;">Conversion Completed Successfully!</h2>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">Your high-compatibility MP4 video is ready for playback or download.</p>
+
+      <div style="max-width: 600px; margin: 1.5rem auto 0; border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--bg-card-border);">
+        <video id="convertedVideoPreview" controls></video>
+      </div>
+
+      <div class="complete-actions">
+        <a id="downloadMp4Btn" href="#" class="btn-primary" style="width: auto; text-decoration: none;" download>
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Download MP4 Video
+        </a>
+        <button id="convertAnotherBtn" class="btn-secondary">
+          Convert Another File
+        </button>
+      </div>
+    </div>
+
+    <!-- TAB 3: History & Library -->
+    <section id="tab-history" class="tab-panel">
+      <div class="glass-card">
+        <div class="card-title">
+          <span>📚</span> Converted Videos Library
+        </div>
+        <div class="card-subtitle">
+          View, preview, or re-download all your converted MP4 videos stored on the portal.
+        </div>
+
+        <div style="overflow-x: auto;">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>File Name</th>
+                <th>Size</th>
+                <th>Created Time</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody">
+              <tr>
+                <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">Loading library...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
