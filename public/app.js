@@ -297,32 +297,56 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    showToast('Fetching YouTube metadata via yt-dlp...', 'info');
+    showToast('Fetching YouTube metadata...', 'info');
     ytFetchBtn.disabled = true;
     ytFetchBtn.textContent = 'Fetching...';
 
+    let data = null;
+
+    // First try backend API
     try {
       const res = await fetch(apiUrl(`/api/yt-info?url=${encodeURIComponent(url)}`));
-      const data = await res.json();
-
-      ytFetchBtn.disabled = false;
-      ytFetchBtn.textContent = 'Fetch Link';
-
-      if (data.error) {
-        showToast(data.error, 'error');
-      } else {
-        fetchedYtUrl = url;
-        ytTitle.textContent = data.title || 'YouTube Video';
-        ytUploader.textContent = `${data.uploader || 'Channel'} • ${formatDuration(data.duration || 0)}`;
-        ytThumb.src = data.thumbnail || '';
-        ytInfoCard.style.display = 'block';
-        showToast('YouTube link analyzed!', 'success');
+      if (res.ok) {
+        data = await res.json();
       }
     } catch (err) {
-      console.error(err);
-      ytFetchBtn.disabled = false;
-      ytFetchBtn.textContent = 'Fetch Link';
-      showToast('Failed to fetch YouTube info', 'error');
+      console.warn('Backend yt-info unavailable, using HTTPS metadata fallback...', err);
+    }
+
+    // Fallback for GitHub Pages static environment (HTTPS CORS)
+    if (!data || data.error) {
+      try {
+        const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+        if (videoIdMatch && videoIdMatch[1]) {
+          const videoId = videoIdMatch[1];
+          const noembedRes = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+          if (noembedRes.ok) {
+            const noembedData = await noembedRes.json();
+            data = {
+              title: noembedData.title || 'YouTube Video',
+              uploader: noembedData.author_name || 'YouTube Creator',
+              thumbnail: noembedData.thumbnail_url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+              duration: 0
+            };
+          }
+        }
+      } catch (fallbackErr) {
+        console.error('Fallback failed:', fallbackErr);
+      }
+    }
+
+    ytFetchBtn.disabled = false;
+    ytFetchBtn.textContent = 'Fetch Link';
+
+    if (data && data.title) {
+      fetchedYtUrl = url;
+      ytTitle.textContent = data.title;
+      ytUploader.textContent = `${data.uploader || 'YouTube Channel'}${data.duration ? ' • ' + formatDuration(data.duration) : ''}`;
+      ytThumb.src = data.thumbnail || '';
+      ytInfoCard.style.display = 'block';
+      showToast('YouTube link analyzed successfully!', 'success');
+    } else {
+      showToast('Failed to fetch YouTube info. Please check the URL.', 'error');
     }
   });
 
@@ -350,9 +374,15 @@ document.addEventListener('DOMContentLoaded', () => {
         resetProgressCard();
       }
     } catch (err) {
-      console.error(err);
-      showToast('Failed to start YouTube download', 'error');
+      console.warn('Backend server unreachable, redirecting to direct downloader...', err);
       resetProgressCard();
+
+      const videoIdMatch = fetchedYtUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+      const videoId = videoIdMatch ? videoIdMatch[1] : '';
+      const downloadUrl = `https://ssyoutube.com/watch?v=${videoId || encodeURIComponent(fetchedYtUrl)}`;
+
+      showToast('Opening high-speed MP4 download service...', 'info');
+      window.open(downloadUrl, '_blank');
     }
   });
 
